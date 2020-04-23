@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en" prefix="og: http://ogp.me/ns# fb: https://www.facebook.com/2008/fbml">
+<head>
+    <title>Detecting COVID-19 from chest X-ray images using deep learning - Rajesh Arasada's Blog</title>
+    <!-- Using the latest rendering mode for IE -->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+
+
+<link rel="canonical" href="/articles/2020/04/20/detecting-covid-19-from-chest-x-ray-images-using-deep-learning/">
+
+        <meta name="author" content="Rajesh Arasada" />
+        <meta name="keywords" content="markdown,pygments" />
+        <meta name="description" content="In this project, we will build a powerful binary image classifier, to distinguish COVID-19 viral pneumonia chest X-rays from non COVID-19 viral pneumonia chest X-rays. Before we begin, let me emphasize that this is not a diagnostic tool. The intent of this project is to showcase how AI can be …" />
+
+        <meta property="og:site_name" content="Rajesh Arasada's Blog" />
+        <meta property="og:type" content="article"/>
+        <meta property="og:title" content="Detecting COVID-19 from chest X-ray images using deep learning"/>
+        <meta property="og:url" content="/articles/2020/04/20/detecting-covid-19-from-chest-x-ray-images-using-deep-learning/"/>
+        <meta property="og:description" content="In this project, we will build a powerful binary image classifier, to distinguish COVID-19 viral pneumonia chest X-rays from non COVID-19 viral pneumonia chest X-rays. Before we begin, let me emphasize that this is not a diagnostic tool. The intent of this project is to showcase how AI can be …"/>
+        <meta property="article:published_time" content="2020-04-20" />
+            <meta property="article:section" content="blogging" />
+            <meta property="article:tag" content="markdown" />
+            <meta property="article:tag" content="pygments" />
+            <meta property="article:author" content="Rajesh Arasada" />
+
+
+
+    <!-- Bootstrap -->
+        <link rel="stylesheet" href="/theme/css/bootstrap.flatly.min.css" type="text/css"/>
+    <link href="/theme/css/font-awesome.min.css" rel="stylesheet">
+
+    <link href="/theme/css/pygments/monokai.css" rel="stylesheet">
+    <link rel="stylesheet" href="/theme/css/style.css" type="text/css"/>
+
+        <link href="/feeds/all.atom.xml" type="application/atom+xml" rel="alternate"
+              title="Rajesh Arasada's Blog ATOM Feed"/>
+
+        <link href="/feeds/blogging.atom.xml" type="application/atom+xml" rel="alternate"
+              title="Rajesh Arasada's Blog blogging ATOM Feed"/>
+</head>
+<body>
+
+<div class="navbar navbar-default navbar-fixed-top" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-ex1-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a href="/" class="navbar-brand">
+Rajesh Arasada's Blog            </a>
+        </div>
+        <div class="collapse navbar-collapse navbar-ex1-collapse">
+            <ul class="nav navbar-nav">
+                         <li><a href="/pages/about-me/">
+                             About Me
+                          </a></li>
+                        <li class="active">
+                            <a href="/category/blogging">Blogging</a>
+                        </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+            </ul>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+</div> <!-- /.navbar -->
+
+<!-- Banner -->
+<!-- End Banner -->
+
+<!-- Content Container -->
+<div class="container">
+    <div class="row">
+        <div class="col-sm-9">
+    <section id="content">
+        <article>
+            <header class="page-header">
+                <h1>
+                    <a href="/articles/2020/04/20/detecting-covid-19-from-chest-x-ray-images-using-deep-learning/"
+                       rel="bookmark"
+                       title="Permalink to Detecting COVID-19 from chest X-ray images using deep learning">
+                        Detecting COVID-19 from chest X-ray images using deep learning
+                    </a>
+                </h1>
+            </header>
+            <div class="entry-content">
+                <div class="panel">
+                    <div class="panel-body">
+<footer class="post-info">
+    <span class="label label-default">Date</span>
+    <span class="published">
+        <i class="fa fa-calendar"></i><time datetime="2020-04-20T12:00:00-04:00"> Mon 20 April 2020</time>
+    </span>
+
+
+
+
+
+<span class="label label-default">Tags</span>
+	<a href="/tag/markdown">markdown</a>
+        /
+	<a href="/tag/pygments">pygments</a>
+    
+</footer><!-- /.post-info -->                    </div>
+                </div>
+                <p>In this project, we will build a powerful binary image classifier, to distinguish COVID-19 viral pneumonia chest X-rays from non COVID-19 viral pneumonia chest X-rays. Before we begin, let me emphasize that this is not a diagnostic tool. The intent of this project is to showcase how AI can be useful in assisting COVID-19 detection. 
+In our set up we will:</p>
+<ul>
+<li>retrieve images for COVID-19 chest X-rays and non COVID-19 viral pneumonia chest X-rays</li>
+<li>create training, validation and testing datasets</li>
+<li>use a pretrained deep neural network to train and fine tune to build a chest X-ray classifier</li>
+</ul>
+<h2>Dataset Details</h2>
+<p>For this project we can collect and combine data from two different sources. Non COVID-19 viral pneumonia chest X-rays can be retrieved from the <a href="https://www.kaggle.com/paultimothymooney/chest-xray-pneumonia">Kaggle website</a>. X-rays in this dataset are from healthy individuals and from patients with both viral and bacterial infections. Using the information stored in the filenames we can retrieve 1314 viral pneumonia X-rays (non COVID-19). COVID-19 chest X-rays are released under the following URL: https://github.com/ieee8023/ covid-chestxray-dataset. Additional information about this dataset is available in the paper published by <a href="https://arxiv.org/abs/2003.11597">Cohen et.al</a>. At the time of this project ~191 COVID-19 X-rays are available in this dataset. We will set aside ~ 30 images from each class as test data to evaluate our model leaving us with only 161 images to learn COVID-19 specific features and build a classifier. </p>
+<p><img alt="Sample Chest X-rays" src="/img/Chest_X_rays.png"></p>
+<h2>Convolutional neural networks (Convnets/CNNs)</h2>
+<p>Convolutional neural networks (Convnets/CNNs) are the right tool for this job. Convnets are very good at learning features automatically from the training data and distinguish objects based on features learned. Applications of CNNs range widely, from speech recognition, face recognition, or traffic sign classification. In the context of medical imaging, CNNs have been used to classify medical images, detect cancer tissue in histopathological images, extract prognosticators from tissue microarrays (TMAs) of human solid tumors, and classify tumor cell nuclei according to chromatin patterns. Convnets perform reasonably well even on small datasets without custom feature engineering, but even with few hundred images it is a very difficult task to build and train models that generalize well. </p>
+<h2>Data Augmentation and Transfer Learning (Mitigating problems with small data size)</h2>
+<p>To mitigate problems commonly seen with deep neural networks trained with small datasets such as generalization and difficulty in reaching the global optimum we will employ data augmentation and transfer learning. </p>
+<h3>Data Augmentation</h3>
+<p>To make most out of these limited data samples, we will perform a number of random image transformations and increase the COVID-19 data size to 600 images. We will use <a href="https://imgaug.readthedocs.io/en/latest/#">imgaug</a> which is a python library to augment training data. During the training phase we will load the dataset and perform real-time augmentation with Keras ImageDataGenerator class so the network sees different images at each epoch. We will not apply any transformations on our test data except scaling the images (which is mandatory).</p>
+<p>Let's look at an example right away:</p>
+<div class="highlight"><pre><span></span><span class="n">sometimes</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">aug</span><span class="p">:</span> <span class="n">iaa</span><span class="o">.</span><span class="n">Sometimes</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">aug</span><span class="p">)</span>
+<span class="nb">apply</span> <span class="n">the</span> <span class="n">following</span> <span class="n">augmenters</span> <span class="n">to</span> <span class="n">most</span> <span class="n">images</span>
+<span class="n">seq</span> <span class="o">=</span> <span class="n">iaa</span><span class="o">.</span><span class="n">Sequential</span><span class="p">([</span>
+<span class="n">iaa</span><span class="o">.</span><span class="n">Fliplr</span><span class="p">(</span><span class="mf">0.5</span><span class="p">),</span> <span class="c1"># horizontally flip 50% of all images</span>
+<span class="n">iaa</span><span class="o">.</span><span class="n">Flipud</span><span class="p">(</span><span class="mf">0.2</span><span class="p">),</span> <span class="c1"># vertically flip 20% of all images</span>
+
+<span class="n">sometimes</span><span class="p">(</span><span class="n">iaa</span><span class="o">.</span><span class="n">Affine</span><span class="p">(</span>
+        <span class="n">translate_percent</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">),</span> <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">)},</span> <span class="c1"># translate by -20 to +20 percent (per axis)</span>
+        <span class="n">rotate</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">25</span><span class="p">,</span> <span class="mi">25</span><span class="p">),</span> <span class="c1"># rotate by -25 to +25 degrees</span>
+        <span class="n">shear</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span> <span class="c1"># shear by -8 to +8 degrees</span>
+        <span class="n">order</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="c1"># use nearest neighbour or bilinear interpolation (fast)</span>
+        <span class="n">cval</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span> <span class="c1"># if mode is constant, use a cval between 0 and 255</span>
+        <span class="n">mode</span><span class="o">=</span><span class="n">ia</span><span class="o">.</span><span class="n">ALL</span> <span class="c1"># use any of scikit-image&#39;s warping modes (see 2nd image from the top for examples)</span>
+    <span class="p">)),</span>
+
+<span class="n">iaa</span><span class="o">.</span><span class="n">SomeOf</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span>
+        <span class="p">[</span><span class="n">iaa</span><span class="o">.</span><span class="n">OneOf</span><span class="p">([</span>
+            <span class="n">iaa</span><span class="o">.</span><span class="n">GaussianBlur</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">)),</span> <span class="c1"># blur images with a sigma between 0 and 3.0</span>
+            <span class="n">iaa</span><span class="o">.</span><span class="n">AverageBlur</span><span class="p">(</span><span class="n">k</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">7</span><span class="p">)),</span> <span class="c1"># blur image using local means with kernel sizes between 2 and 7</span>
+        <span class="p">]),</span>
+         <span class="n">iaa</span><span class="o">.</span><span class="n">Sharpen</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span> <span class="n">lightness</span><span class="o">=</span><span class="p">(</span><span class="mf">0.75</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">)),</span> <span class="c1"># sharpen images</span>
+         <span class="n">iaa</span><span class="o">.</span><span class="n">AdditiveGaussianNoise</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.05</span><span class="o">*</span><span class="mi">255</span><span class="p">),</span> <span class="n">per_channel</span><span class="o">=</span><span class="mf">0.5</span><span class="p">),</span> <span class="c1"># add gaussian noise to images</span>
+        <span class="p">],</span>
+           <span class="n">random_order</span><span class="o">=</span><span class="bp">True</span>
+          <span class="p">)],</span>
+<span class="n">random_order</span><span class="o">=</span><span class="bp">True</span>
+<span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">augment</span><span class="p">(</span><span class="n">img</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    to_deterministic() removes the randomness from all augmenters and makes them deterministic </span>
+<span class="sd">    (e.g. for each parameter that comes from a distribution, it samples one value from that </span>
+<span class="sd">    distribution and then keeps reusing that value)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">seq_det</span> <span class="o">=</span> <span class="n">seq</span><span class="o">.</span><span class="n">to_deterministic</span><span class="p">()</span>             
+    <span class="n">aug_img</span> <span class="o">=</span> <span class="n">seq_det</span><span class="o">.</span><span class="n">augment_image</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>         
+    <span class="n">aug_img</span> <span class="o">=</span> <span class="n">vgg19_preprocess_input</span><span class="p">(</span><span class="n">aug_img</span><span class="p">)</span>    
+    <span class="k">return</span> <span class="n">aug_img</span>
+
+ <span class="c1"># Instantiate the ImageDataGenerator from tensorflow.keras passing in out custom augmentation function</span>
+<span class="n">train_generator</span> <span class="o">=</span> <span class="n">ImageDataGenerator</span><span class="p">(</span><span class="n">preprocessing_function</span><span class="o">=</span><span class="n">augment</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">f_paths</span><span class="p">:</span>                                   
+    <span class="n">failed_files</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">load_img</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>                            
+        <span class="n">x</span> <span class="o">=</span> <span class="n">img_to_array</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>                       
+        <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="p">)</span> <span class="o">+</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>              
+        <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>                                      
+        <span class="k">for</span> <span class="n">batch</span> <span class="ow">in</span> <span class="n">train_generator</span><span class="o">.</span><span class="n">flow</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">batch_size</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> 
+                              <span class="n">save_to_dir</span> <span class="o">=</span><span class="s2">&quot;./covid_aug&quot;</span><span class="p">,</span>  
+                              <span class="n">save_prefix</span> <span class="o">=</span><span class="s1">&#39;covid_aug&#39;</span><span class="p">,</span> <span class="n">save_format</span> <span class="o">=</span><span class="s1">&#39;jpeg&#39;</span><span class="p">):</span>
+            <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="mi">5</span><span class="p">:</span>
+                <span class="k">break</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="n">failed_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+</pre></div>
+
+
+<h3>Transfer Learning</h3>
+<p>The augmented images are highly correlated and the models trained on few hundred images can learn only limited number of features and have limited capacity to generalize well. So we can rely on models that were trained on large datasets. A large number of pretrained CNN models, all of which pretrained on diverse image categories on the <a href="www.image-net.org">ImageNet database</a> are now publicly available for reuse. We will choose VGG19 in particular and repurpose the diverse set of features learned over a million images for the X-ray classification task at hand. </p>
+<h3>VGG19 Architecture</h3>
+<p>VGG19 is a 19 layer deep neural network with a simple architecture, a convolution base and a fully connected dense classifier as depicted below. The convolution base is built with (blue) 5 blocks of convolution layers separated by (tan) maxpooling layers (2X2 maxpooling with a stride of 2) for downsampling. All convolution blocks use 3X3 convolutions with “same” padding and a stride of 2. The output of the convolutions base is connected to three dense layers (FC1, FC2 and softmax). The dense layers are specific to the task the network was trained for. </p>
+<p><img alt="VGG19 Architecture" src="/img/VGG19.png"></p>
+<h3>Model 1: Pretrained model as Feature Extractor:</h3>
+<p>For our first model we will instantiate the pretrained VGG19 model up to the fully-connected layers with its pretrained weights. We will add a classifier initialized with random weights that will be trained for X-ray classification task. This classifier includes fully connected Dense, BatchNormalization and Dropout layers. During the training phase large gradient updates triggered by the randomly initialized weights would wreck the learned weights in the convolution base. To avoid any changes in the pretrained weights we will freeze the pretrained layers and train just the classifier. </p>
+<div class="highlight"><pre><span></span><span class="c1"># Instantiate the vgg19 model without the top classifier.</span>
+<span class="n">base_model</span> <span class="o">=</span> <span class="n">VGG19</span><span class="p">(</span><span class="n">input_shape</span><span class="o">=</span><span class="p">(</span><span class="mi">224</span><span class="p">,</span> <span class="mi">224</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+                   <span class="n">weights</span><span class="o">=</span><span class="s1">&#39;imagenet&#39;</span><span class="p">,</span> <span class="n">include_top</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+
+<span class="c1"># Add a classifier to the convolution block classifier</span>
+<span class="n">out</span> <span class="o">=</span> <span class="n">base_model</span><span class="o">.</span><span class="n">output</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">Flatten</span><span class="p">()(</span><span class="n">out</span><span class="p">)</span>
+<span class="c1"># Add a  classifier</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">Dense</span><span class="p">(</span><span class="mi">1024</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="s1">&#39;relu&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;dense_01&#39;</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">BatchNormalization</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;batch_normalization_01&#39;</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">Dropout</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;dropout_01&#39;</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">Dense</span><span class="p">(</span><span class="mi">512</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="s1">&#39;relu&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;dense_02&#39;</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">Dropout</span><span class="p">(</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;dropout_02&#39;</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">output</span> <span class="o">=</span> <span class="n">Dense</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="s1">&#39;softmax&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;output&#39;</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+
+<span class="c1"># Define the model</span>
+<span class="n">model_vgg19_binary_01</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">base_model</span><span class="o">.</span><span class="n">inputs</span><span class="p">,</span> <span class="n">output</span><span class="p">)</span>
+
+<span class="c1"># Freeze all layers in the convolution block. We don&#39;t want to train these weights yet.</span>
+<span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="n">base_model</span><span class="o">.</span><span class="n">layers</span><span class="p">:</span>
+    <span class="n">layer</span><span class="o">.</span><span class="n">trainable</span> <span class="o">=</span> <span class="bp">False</span>
+
+<span class="n">model_vgg19_binary_01</span><span class="o">.</span><span class="n">summary</span><span class="p">()</span>
+
+<span class="c1"># Compile a model</span>
+<span class="n">model_vgg19_binary_01</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
+    <span class="n">loss</span><span class="o">=</span><span class="s2">&quot;categorical_crossentropy&quot;</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="n">RMSprop</span><span class="p">(</span><span class="mf">0.001</span><span class="p">),</span> <span class="n">metrics</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;accuracy&quot;</span><span class="p">])</span>
+
+<span class="n">filepath</span> <span class="o">=</span> <span class="s2">&quot;./output_3/aug_covid_binary_model_weights_ft.h5&quot;</span>
+<span class="n">es</span> <span class="o">=</span> <span class="n">EarlyStopping</span><span class="p">(</span><span class="n">monitor</span><span class="o">=</span><span class="s1">&#39;loss&#39;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;min&#39;</span><span class="p">,</span> <span class="n">patience</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+<span class="n">cp</span> <span class="o">=</span> <span class="n">ModelCheckpoint</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="n">monitor</span><span class="o">=</span><span class="s1">&#39;val_loss&#39;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">save_best_only</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                     <span class="n">save_weights_only</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;auto&#39;</span><span class="p">,</span> <span class="n">save_freq</span><span class="o">=</span><span class="s1">&#39;epoch&#39;</span><span class="p">)</span>
+
+<span class="c1"># Set the number of training and validation steps</span>
+<span class="n">STEP_SIZE_TRAIN</span> <span class="o">=</span> <span class="n">train_datagenerator</span><span class="o">.</span><span class="n">n</span><span class="o">//</span><span class="n">train_datagenerator</span><span class="o">.</span><span class="n">batch_size</span>
+<span class="n">STEP_SIZE_VALID</span> <span class="o">=</span> <span class="n">valid_datagenerator</span><span class="o">.</span><span class="n">n</span><span class="o">//</span><span class="n">valid_datagenerator</span><span class="o">.</span><span class="n">batch_size</span>
+
+<span class="c1"># Model fitting</span>
+<span class="n">history_01</span> <span class="o">=</span> <span class="n">model_vgg19_binary_01</span><span class="o">.</span><span class="n">fit_generator</span><span class="p">(</span><span class="n">train_datagenerator</span><span class="p">,</span>
+                                                 <span class="n">steps_per_epoch</span><span class="o">=</span><span class="n">STEP_SIZE_TRAIN</span><span class="p">,</span>
+                                                 <span class="n">validation_data</span><span class="o">=</span><span class="n">valid_datagenerator</span><span class="p">,</span> 
+                                                 <span class="n">validation_steps</span><span class="o">=</span><span class="n">STEP_SIZE_VALID</span><span class="p">,</span>
+                                                 <span class="n">callbacks</span><span class="o">=</span><span class="p">[</span><span class="n">es</span><span class="p">,</span> <span class="n">cp</span><span class="p">],</span>
+                                                 <span class="n">class_weight</span><span class="o">=</span><span class="n">class_weights</span><span class="p">,</span>
+                                                 <span class="n">epochs</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+</pre></div>
+
+
+<p>We will train this model for 10 epochs and save the model. To evaluate the model performance let’s plot the model’s accuracy and loss curves between training and validation data and look at the Precision and Recall scores in the classification report . </p>
+<p><img alt="Model_01 Evaluation" src="/img/model_01_evaluation.png"></p>
+<p>The plots show a validation accuracy of 94% which is pretty good. The accuracy and loss curves didn’t plateau and it appears that we can improve the model with more training. </p>
+<p>From the classification report on the validation data it appears that the model did not learn well: it captured only 58% of the total positive cases (recall) and only 74% of the COVID positive predictions are actually positive (precision). </p>
+<h3>Classification Report on Validation Data</h3>
+<table>
+<thead>
+<tr>
+<th align="left">﻿</th>
+<th align="center"><code>precision</code></th>
+<th align="center"><code>recall</code></th>
+<th align="center"><code>f1-score</code></th>
+<th align="right"><code>support</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left"></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="right"></td>
+</tr>
+<tr>
+<td align="left">COVID</td>
+<td align="center">0.74</td>
+<td align="center">0.58</td>
+<td align="center">0.65</td>
+<td align="right">60</td>
+</tr>
+<tr>
+<td align="left">non COVID</td>
+<td align="center">0.96</td>
+<td align="center">0.98</td>
+<td align="center">0.97</td>
+<td align="right">553</td>
+</tr>
+<tr>
+<td align="left"></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="right"></td>
+</tr>
+<tr>
+<td align="left">accuracy</td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center">0.94</td>
+<td align="right">613</td>
+</tr>
+<tr>
+<td align="left">macro avg</td>
+<td align="center">0.85</td>
+<td align="center">0.78</td>
+<td align="center">0.81</td>
+<td align="right">613</td>
+</tr>
+<tr>
+<td align="left">weighted avg</td>
+<td align="center">0.94</td>
+<td align="center">0.94</td>
+<td align="center">0.94</td>
+<td align="right">613</td>
+</tr>
+</tbody>
+</table>
+<p><img alt="Model_01 Confusion Matrix" src="/img/confusion_matrix_val_01.png"></p>
+<h2>Model 2: Fine tuning the convolution layers of a pre-trained network</h2>
+<p>Let’s train the model for more epochs but this time we will unfreeze the last convolution block (# 5) and fine tune it’s weights along with the classifier’s weights. We will construct the model as above and load the weights from previously trained model. </p>
+<div class="highlight"><pre><span></span> <span class="c1"># # Define the model</span>
+<span class="n">model_vgg19_binary_02</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">base_model</span><span class="o">.</span><span class="n">inputs</span><span class="p">,</span> <span class="n">output</span><span class="p">)</span>
+<span class="n">model_vgg19_binary_02</span><span class="o">.</span><span class="n">load_weights</span><span class="p">(</span><span class="s2">&quot;./output_3/aug_covid_binary_model_weights_ft.h5&quot;</span><span class="p">)</span>
+
+<span class="c1"># Freeze convolution block 1-4 i.e, upto layer 17. </span>
+<span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="n">base_model</span><span class="o">.</span><span class="n">layers</span><span class="p">[:</span><span class="mi">17</span><span class="p">]:</span>
+    <span class="n">layer</span><span class="o">.</span><span class="n">trainable</span> <span class="o">=</span> <span class="bp">False</span>
+</pre></div>
+
+
+<p>We will train this model for another 15 epochs using similar configurations and call backs and save the model. From the plots below we can see that the accuracy and loss continue to improve. The model successfully captured 100% of positive cases in the validation data but it incorrectly predicted a large number of positive predictions (false positive predictions). </p>
+<p><img alt="Model_02 Evaluation" src="/img/model_02_evaluation.png"></p>
+<h3>Classification Report on Validation Data</h3>
+<table>
+<thead>
+<tr>
+<th align="left">﻿</th>
+<th align="center"><code>precision</code></th>
+<th align="center"><code>recall</code></th>
+<th align="center"><code>f1-score</code></th>
+<th align="right"><code>support</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left"></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="right"></td>
+</tr>
+<tr>
+<td align="left">COVID</td>
+<td align="center">0.59</td>
+<td align="center">1.00</td>
+<td align="center">0.74</td>
+<td align="right">60</td>
+</tr>
+<tr>
+<td align="left">non COVID</td>
+<td align="center">1.00</td>
+<td align="center">0.92</td>
+<td align="center">0.96</td>
+<td align="right">553</td>
+</tr>
+<tr>
+<td align="left"></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="right"></td>
+</tr>
+<tr>
+<td align="left">accuracy</td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center">0.93</td>
+<td align="right">613</td>
+</tr>
+<tr>
+<td align="left">macro avg</td>
+<td align="center">0.79</td>
+<td align="center">0.96</td>
+<td align="center">0.85</td>
+<td align="right">613</td>
+</tr>
+<tr>
+<td align="left">weighted avg</td>
+<td align="center">0.96</td>
+<td align="center">0.93</td>
+<td align="center">0.94</td>
+<td align="right">613</td>
+</tr>
+</tbody>
+</table>
+<p><img alt="Model_02 Confusion Matrix" src="/img/confusion_matrix_val_02.png"></p>
+<h2>Model 3: Fine tuning the convolution layers of a pre-trained network</h2>
+<p>Now we will unfreeze another convolution block (# 4) and fine tune convolution blocks 4, 5 and the top classifier. We will instantiate a model as above and load the weights from model_02. This time we will also change the optimizer from RMSprop to Stochastic Gradient Descent (SGD) and train the model for another 25 epochs. </p>
+<div class="highlight"><pre><span></span><span class="p">:::</span> <span class="n">Python</span> <span class="mi">3</span>
+<span class="c1"># # Define the model</span>
+<span class="n">model_vgg19_binary_03</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">base_model</span><span class="o">.</span><span class="n">inputs</span><span class="p">,</span> <span class="n">output</span><span class="p">)</span>
+<span class="n">model_vgg19_binary_03</span><span class="o">.</span><span class="n">load_weights</span><span class="p">(</span><span class="s2">&quot;./output_3/aug_covid_binary_model_weights_02.h5&quot;</span><span class="p">)</span>
+
+<span class="c1"># Freeze convolution block 1-4 i.e, upto layer 12. </span>
+<span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="n">base_model</span><span class="o">.</span><span class="n">layers</span><span class="p">[:</span><span class="mi">12</span><span class="p">]:</span>
+    <span class="n">layer</span><span class="o">.</span><span class="n">trainable</span> <span class="o">=</span> <span class="bp">False</span>
+
+ <span class="n">sgd</span> <span class="o">=</span> <span class="n">SGD</span><span class="p">(</span><span class="n">learning_rate</span><span class="o">=</span><span class="mf">1e-4</span><span class="p">,</span> <span class="n">decay</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">,</span> <span class="n">momentum</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span> <span class="n">nesterov</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+<span class="c1"># Compile a model</span>
+<span class="n">model_vgg19_binary_03</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
+    <span class="n">loss</span><span class="o">=</span><span class="s2">&quot;categorical_crossentropy&quot;</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="n">sgd</span><span class="p">,</span> <span class="n">metrics</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;accuracy&quot;</span><span class="p">])</span>
+</pre></div>
+
+
+<p>The model accuracy and loss stopped improving after 17 epochs of training and the model training was terminated by our EarlyStopping callback. </p>
+<p><img alt="Model_03 Evaluation" src="/img/model_03_evaluation.png"></p>
+<p>Both the Recall and Precision of the model on the validation data improved significantly. The model captured 97% of the COVID-19 positive samples in our validation data and 98% of the positive predictions are true positives. </p>
+<h3>Classification Report on Validation Data</h3>
+<table>
+<thead>
+<tr>
+<th align="left">﻿</th>
+<th align="center"><code>precision</code></th>
+<th align="center"><code>recall</code></th>
+<th align="center"><code>f1-score</code></th>
+<th align="right"><code>support</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left"></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="right"></td>
+</tr>
+<tr>
+<td align="left">COVID</td>
+<td align="center">0.98</td>
+<td align="center">0.97</td>
+<td align="center">0.97</td>
+<td align="right">60</td>
+</tr>
+<tr>
+<td align="left">non COVID</td>
+<td align="center">1.00</td>
+<td align="center">1.00</td>
+<td align="center">1.00</td>
+<td align="right">553</td>
+</tr>
+<tr>
+<td align="left"></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="right"></td>
+</tr>
+<tr>
+<td align="left">accuracy</td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center">1.00</td>
+<td align="right">613</td>
+</tr>
+<tr>
+<td align="left">macro avg</td>
+<td align="center">0.99</td>
+<td align="center">0.98</td>
+<td align="center">0.99</td>
+<td align="right">613</td>
+</tr>
+<tr>
+<td align="left">weighted avg</td>
+<td align="center">1.00</td>
+<td align="center">1.00</td>
+<td align="center">1.00</td>
+<td align="right">613</td>
+</tr>
+</tbody>
+</table>
+<p><img alt="Model_02 Confusion Matrix" src="/img/confusion_matrix_val_03.png"></p>
+<h2>Evaluation on test images</h2>
+<p>Since this third model appeared to learn the ability to distinguish COVID-19 from non COVID-19 chest X-rays, we can test this model on the test dataset. The model captured all of the COVID-19 positive samples in the test data. Below are 10 random test samples that are predicted by the model. Samples that were incorrectly predicted were labelled in red.</p>
+<p><img alt="Model_03 Confusion Matrix Test" src="/img/confusion_matrix_test.png"></p>
+<p><img alt="Model_03 Test Images Predictions" src="/img/Predictions.png"></p>
+<h2>Conclusion</h2>
+<p>This is an interesting real-world medical imaging case study of COVID-19 detection. COVID-19 has infected nearly 2.5 million people and killed at least 171,000 worldwide, according to Johns Hopkins University. More than 42,000 people have died in the US. We looked at easy to build COVID-19 detection system leveraging AI which can give us state-of-the-art accuracy thus enabling AI for social good. As and when new COVID-19 chest X-rays are released we should be able to test improve the model. Let’s hope for more adoption of open-source AI capabilities across healthcare making it cheaper and accessible for everyone across the world!</p>
+            </div>
+            <!-- /.entry-content -->
+        </article>
+    </section>
+
+        </div>
+        <div class="col-sm-3" id="sidebar">
+            <aside>
+<!-- Sidebar -->
+<section class="well well-sm">
+  <ul class="list-group list-group-flush">
+
+<!-- Sidebar/Social -->
+<li class="list-group-item">
+  <h4><i class="fa fa-home fa-lg"></i><span class="icon-label">Social</span></h4>
+  <ul class="list-group" id="social">
+    <li class="list-group-item"><a href="https://www.linkedin.com/in/rajesharasada/"><i class="fa fa-linkedin-square fa-lg"></i> LinkedIn</a></li>
+    <li class="list-group-item"><a href="https://github.com/RajeshArasada"><i class="fa fa-github-square fa-lg"></i> Github</a></li>
+  </ul>
+</li>
+<!-- End Sidebar/Social -->
+
+<!-- Sidebar/Links -->
+<li class="list-group-item">
+  <h4><i class="fa fa-external-link-square fa-lg"></i><span class="icon-label">Links</span></h4>
+  <ul class="list-group" id="links">
+    <li class="list-group-item">
+      <a href="https://nycdatascience.com/" target="_blank">NYC Data Science Academy</a>
+    </li>
+    <li class="list-group-item">
+      <a href="https://wikipedia.org" target="_blank">Wikipedia</a>
+    </li>
+    <li class="list-group-item">
+      <a href="https://www.tensorflow.org/" target="_blank">TensorFlow</a>
+    </li>
+    <li class="list-group-item">
+      <a href="https://stackoverflow.com/" target="_blank">stack overflow</a>
+    </li>
+  </ul>
+</li>
+<!-- End Sidebar/Links -->
+  </ul>
+</section>
+<!-- End Sidebar -->            </aside>
+        </div>
+    </div>
+</div>
+<!-- End Content Container -->
+
+<footer>
+   <div class="container">
+      <hr>
+      <div class="row">
+         <div class="col-xs-10">&copy; 2020 Rajesh Arasada
+            &middot; Powered by <a href="https://github.com/getpelican/pelican-themes/tree/master/pelican-bootstrap3" target="_blank">pelican-bootstrap3</a>,
+            <a href="http://docs.getpelican.com/" target="_blank">Pelican</a>,
+            <a href="http://getbootstrap.com" target="_blank">Bootstrap</a>         </div>
+         <div class="col-xs-2"><p class="pull-right"><i class="fa fa-arrow-up"></i> <a href="#">Back to top</a></p></div>
+      </div>
+   </div>
+</footer>
+<script src="/theme/js/jquery.min.js"></script>
+
+<!-- Include all compiled plugins (below), or include individual files as needed -->
+<script src="/theme/js/bootstrap.min.js"></script>
+
+<!-- Enable responsive features in IE8 with Respond.js (https://github.com/scottjehl/Respond) -->
+<script src="/theme/js/respond.min.js"></script>
+
+
+
+
+</body>
+</html>
